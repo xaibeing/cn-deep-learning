@@ -384,8 +384,8 @@ unittest.TextTestRunner().run(suite)
 import sys
 
 ### Set the hyperparameters here ###
-iterations = 10000
-learning_rate = 0.15
+iterations = 1000
+learning_rate = 0.8
 hidden_nodes = 20
 output_nodes = 1
 
@@ -413,12 +413,16 @@ for ii in range(iterations):
 
 
 # [ ]:
-fig, ax = plt.subplots(figsize=(8,4))
-ax.plot(losses['train'], label='Training loss')
-ax.plot(losses['validation'], label='Validation loss')
-ax.legend()
-_ = plt.ylim()
-
+#fig, ax = plt.subplots(figsize=(8,4))
+#ax.plot(losses['train'], label='Training loss')
+#ax.plot(losses['validation'], label='Validation loss')
+#ax.legend()
+#_ = plt.ylim()
+axes = plt.gca()
+axes.plot(losses['train'], label='Training loss')
+axes.plot(losses['validation'], label='Validation loss')
+axes.legend()
+_ = axes.set_ylim([0,3])
 
 # ## 检查预测结果
 # 
