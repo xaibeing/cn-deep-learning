@@ -384,8 +384,8 @@ unittest.TextTestRunner().run(suite)
 import sys
 
 ### Set the hyperparameters here ###
-iterations = 1000
-learning_rate = 0.8
+iterations = 4000
+learning_rate = 0.5
 hidden_nodes = 20
 output_nodes = 1
 
