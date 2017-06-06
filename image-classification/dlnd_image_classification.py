@@ -22,7 +22,10 @@ from tqdm import tqdm
 import problem_unittests as tests
 import tarfile
 
-import sys
+import pandas as pd
+import matplotlib.pyplot as plt
+# plt.isinteractive()
+# plt.interactive(False)
 
 cifar10_dataset_folder_path = 'cifar-10-batches-py'
 
@@ -234,7 +237,8 @@ def neural_net_image_input(image_shape):
     : return: Tensor for image input.
     """
     # TODO: Implement Function
-    return tf.placeholder(tf.float32, shape=[None, image_shape[0], image_shape[1], image_shape[2]], name='x')
+    # return tf.placeholder(tf.float32, shape=[None, image_shape[0], image_shape[1], image_shape[2]], name='x')
+    return tf.placeholder(tf.float32, shape=[None, *image_shape], name='x')
 
 
 def neural_net_label_input(n_classes):
@@ -245,7 +249,6 @@ def neural_net_label_input(n_classes):
     """
     # TODO: Implement Function
     return tf.placeholder(tf.float32, shape=[None, n_classes], name='y')
-
 
 def neural_net_keep_prob_input():
     """
@@ -263,7 +266,6 @@ DON'T MODIFY ANYTHING IN THIS CELL THAT IS BELOW THIS LINE
 # tests.test_nn_image_inputs(neural_net_image_input)
 # tests.test_nn_label_inputs(neural_net_label_input)
 # tests.test_nn_keep_prob_inputs(neural_net_keep_prob_input)
-
 
 # ### 卷积和最大池化层
 # 
@@ -446,6 +448,7 @@ def conv_net(x, keep_prob):
     #   fully_conn(x_tensor, num_outputs)
     # net = fully_conn(net, 1024)
     net = fully_conn(net, 64)
+    # net = tf.nn.dropout(net, keep_prob)
     
     # TODO: Apply an Output Layer
     #    Set this to the number of classes
@@ -517,8 +520,8 @@ def train_neural_network(session, optimizer, keep_probability, feature_batch, la
     : label_batch: Batch of Numpy label data
     """
     # TODO: Implement Function
-    _ = session.run([optimizer, cost, accuracy], feed_dict={x: feature_batch, y: label_batch, keep_prob: keep_probability})
-
+    _, cost_train, accuracy_train = session.run([optimizer, cost, accuracy], feed_dict={x: feature_batch, y: label_batch, keep_prob: keep_probability})
+    return cost_train, accuracy_train
 
 """
 DON'T MODIFY ANYTHING IN THIS CELL THAT IS BELOW THIS LINE
@@ -533,7 +536,7 @@ DON'T MODIFY ANYTHING IN THIS CELL THAT IS BELOW THIS LINE
 
 # In[ ]:
 
-def print_stats(session, feature_batch, label_batch, cost, accuracy, epoch, batch_i):
+def print_stats(session, trainLoss, trainAccuracy, epoch, batch_i):
     """
     Print information about loss and validation accuracy
     : session: Current TensorFlow session
@@ -543,16 +546,23 @@ def print_stats(session, feature_batch, label_batch, cost, accuracy, epoch, batc
     : accuracy: TensorFlow accuracy function
     """
     # TODO: Implement Function
-    valid_loss, valid_accuracy = session.run([cost, accuracy], feed_dict={x: valid_features, y: valid_labels, keep_prob: 1})
+    validLoss, validAccuracy = session.run([cost, accuracy], feed_dict={x: valid_features, y: valid_labels, keep_prob: 1})
     # print('cost', cost)
     # print('accuracy', accuracy)
-    # print('valid_loss', valid_loss)
-    # print('valid_accuracy', valid_accuracy)
-    # print("training loss {:.3f}, accuracy {:.3f}, valid loss {:.3f}, accuracy {:.3f}".format(cost, accuracy, valid_loss, valid_accuracy))
-    # print("valid loss {:.3f}, accuracy {:.3f}".format(valid_loss, valid_accuracy))
-    # sys.stdout.write("Epoch {:>2}, CIFAR-10 Batch {}: valid loss {:.3f}, accuracy {:.3f}\r".format(epoch, batch_i, valid_loss, valid_accuracy))
+    # print('validLoss', validLoss)
+    # print('validAccuracy', validAccuracy)
+    # print("training loss {:.3f}, accuracy {:.3f}, valid loss {:.3f}, accuracy {:.3f}".format(cost, accuracy, validLoss, validAccuracy))
+    # print("valid loss {:.3f}, accuracy {:.3f}".format(validLoss, validAccuracy))
+    # sys.stdout.write("Epoch {:>2}, CIFAR-10 Batch {}: valid loss {:.3f}, accuracy {:.3f}\r".format(epoch, batch_i, validLoss, validAccuracy))
     # sys.stdout.flush()
-    print("\r", "Epoch {:>2}, CIFAR-10 Batch {}: valid loss {:.3f}, accuracy {:.3f}".format(epoch, batch_i, valid_loss, valid_accuracy), end="")
+    oneMetrics = []
+    oneMetrics.append(epoch)
+    oneMetrics.append(trainLoss)
+    oneMetrics.append(trainAccuracy)
+    oneMetrics.append(validLoss)
+    oneMetrics.append(validAccuracy)
+    lstMetrics.append(oneMetrics)
+    print("\r", "Epoch {:>2}, CIFAR-10 Batch {}: train loss {:.3f}, accuracy {:.3f}, valid loss {:.3f}, accuracy {:.3f}".format(epoch, batch_i, trainLoss, trainAccuracy, validLoss, validAccuracy), end="")
 
 # ### 超参数
 # 
@@ -569,7 +579,8 @@ def print_stats(session, feature_batch, label_batch, cost, accuracy, epoch, batc
 # In[ ]:
 
 # TODO: Tune Parameters
-epochs = 100
+epochs_single = 100
+epochs_full = 200
 batch_size = 256
 keep_probability = 0.8
 
@@ -584,20 +595,30 @@ keep_probability = 0.8
 """
 DON'T MODIFY ANYTHING IN THIS CELL
 """
+
+# 重新初始化，准备记录训练过程中的 loss和acc（在print_stats()中完成）
+lstMetrics = []
+
 print('Checking the Training on a Single Batch...')
 with tf.Session() as sess:
     # Initializing the variables
     sess.run(tf.global_variables_initializer())
     
     # Training cycle
-    for epoch in range(epochs):
+    for epoch in range(epochs_single):
         batch_i = 1
         for batch_features, batch_labels in helper.load_preprocess_training_batch(batch_i, batch_size):
-            train_neural_network(sess, optimizer, keep_probability, batch_features, batch_labels)
+            cost_train, accuracy_train = train_neural_network(sess, optimizer, keep_probability, batch_features, batch_labels)
         # print('Epoch {:>2}, CIFAR-10 Batch {}:  '.format(epoch + 1, batch_i), end='')
-        print_stats(sess, batch_features, batch_labels, cost, accuracy, epoch + 1, batch_i)
+        print_stats(sess, cost_train, accuracy_train, epoch + 1, batch_i)
     print()
 
+print(lstMetrics)
+dfMetrics = pd.DataFrame(lstMetrics, columns=['epoch', 'train_loss', 'train_accuracy', 'valid_loss', 'valid_accuracy'])
+print(dfMetrics)
+dfMetrics.plot(x='epoch', y=['train_loss', 'valid_loss'], title='Single batch samples')
+dfMetrics.plot(x='epoch', y=['train_accuracy', 'valid_accuracy'], title='Single batch samples')
+# plt.show(block=False)
 
 # ### 完全训练模型
 # 
@@ -610,26 +631,32 @@ DON'T MODIFY ANYTHING IN THIS CELL
 """
 save_model_path = './image_classification'
 
+# 重新初始化，准备记录训练过程中的 loss和acc（在print_stats()中完成）
+lstMetrics = []
+
 print('Training...')
 with tf.Session() as sess:
     # Initializing the variables
     sess.run(tf.global_variables_initializer())
     
     # Training cycle
-    for epoch in range(epochs):
+    for epoch in range(epochs_full):
         # Loop over all batches
         n_batches = 5
         for batch_i in range(1, n_batches + 1):
             for batch_features, batch_labels in helper.load_preprocess_training_batch(batch_i, batch_size):
-                train_neural_network(sess, optimizer, keep_probability, batch_features, batch_labels)
+                cost_train, accuracy_train = train_neural_network(sess, optimizer, keep_probability, batch_features, batch_labels)
             # print('Epoch {:>2}, CIFAR-10 Batch {}:  '.format(epoch + 1, batch_i), end='')
-            print_stats(sess, batch_features, batch_labels, cost, accuracy, epoch + 1, batch_i)
+            print_stats(sess, cost_train, accuracy_train, epoch + 1, batch_i)
     print()
 
     # Save Model
     saver = tf.train.Saver()
     save_path = saver.save(sess, save_model_path)
 
+dfMetrics = pd.DataFrame(lstMetrics, columns=['epoch', 'train_loss', 'train_accuracy', 'valid_loss', 'valid_accuracy'])
+dfMetrics.plot(x='epoch', y=['train_loss', 'valid_loss'], title='full samples')
+dfMetrics.plot(x='epoch', y=['train_accuracy', 'valid_accuracy'], title='full samples')
 
 # # 检查点
 # 
@@ -705,6 +732,7 @@ def test_model():
 
 test_model()
 
+plt.show()
 
 # ## 为何准确率只有50-80%？
 # 
