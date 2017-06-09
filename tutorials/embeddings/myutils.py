@@ -56,4 +56,4 @@ def create_lookup_tables(words):
     int_to_vocab = {ii: word for ii, word in enumerate(sorted_vocab)}
     vocab_to_int = {word: ii for ii, word in int_to_vocab.items()}
 
-    return vocab_to_int, int_to_vocab
+    return vocab_to_int, int_to_vocab, word_counts, sorted_vocab
