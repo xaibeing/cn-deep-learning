@@ -42,7 +42,9 @@ show_n_images = 25
 """
 DON'T MODIFY ANYTHING IN THIS CELL
 """
-get_ipython().magic('matplotlib inline')
+# 如果不是运行于ipython（notebook），注释掉下面这行
+# get_ipython().magic('matplotlib inline')
+
 import os
 from glob import glob
 from matplotlib import pyplot
@@ -434,6 +436,9 @@ def show_generator_output(sess, n_images, input_z, out_channel_dim, image_mode):
     pyplot.imshow(images_grid, cmap=cmap)
     pyplot.show()
 
+    # 如果在pycharm运行，启用下面这一行，避免pyplot画图窗口阻塞进程
+    pyplot.pause(0.001)
+
 
 # ### 训练
 # 部署 `train` 函数以建立并训练 GANs 模型。记得使用以下你已完成的函数：
@@ -483,7 +488,11 @@ def train(epoch_count, batch_size, z_dim, learning_rate, beta1, get_batches, dat
     steps = 0
     
 #    stop_training_d = False
-    
+
+    # 如果在pycharm运行，启用下面两行，避免pyplot画图窗口阻塞进程
+    pyplot.ion()
+    pyplot.show()
+
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
         for epoch_i in range(epoch_count):
